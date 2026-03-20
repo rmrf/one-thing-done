@@ -1,0 +1,26 @@
+[Unit]
+Description=One Thing Done - HTTP Command Executor
+Documentation=https://github.com/rmrf/one-thing-done
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/usr/local/bin/one-thing-done --config /usr/local/etc/one-thing-done-config.toml
+Restart=on-failure
+RestartSec=5
+
+# Security settings
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/tmp
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=one-thing-done
+
+[Install]
+WantedBy=multi-user.target

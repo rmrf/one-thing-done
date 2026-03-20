@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -38,9 +39,14 @@ type Command struct {
 var config Config
 
 func main() {
+	// 解析命令行参数
+	var configPath string
+	flag.StringVar(&configPath, "config", "config.toml", "Path to config file")
+	flag.Parse()
+
 	// 读取配置文件
-	if _, err := toml.DecodeFile("config.toml", &config); err != nil {
-		log.Fatalf("无法读取配置文件: %v", err)
+	if _, err := toml.DecodeFile(configPath, &config); err != nil {
+		log.Fatalf("无法读取配置文件 %s: %v", configPath, err)
 	}
 
 	// 验证配置

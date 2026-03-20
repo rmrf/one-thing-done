@@ -36,12 +36,48 @@ args = ["restart", "openclaw.service"]
 
 ## 使用
 
-启动服务:
+### 命令行参数
+
 ```bash
-./one-thing-done
+./one-thing-done --config /path/to/config.toml
 ```
 
-发送请求:
+- `--config`: 配置文件路径（默认: `config.toml`）
+
+### 启动服务
+
+```bash
+# 使用默认配置文件（当前目录的 config.toml）
+./one-thing-done
+
+# 指定配置文件
+./one-thing-done --config /usr/local/etc/one-thing-done-config.toml
+```
+
+### Systemd 安装
+
+```bash
+# 复制二进制文件
+sudo cp one-thing-done /usr/local/bin/
+sudo chmod +x /usr/local/bin/one-thing-done
+
+# 复制配置文件
+sudo cp config.toml /usr/local/etc/one-thing-done-config.toml
+sudo chmod 600 /usr/local/etc/one-thing-done-config.toml
+
+# 复制 service 文件
+sudo cp one-thing-done.service /etc/systemd/system/
+
+# 启动服务
+sudo systemctl daemon-reload
+sudo systemctl enable one-thing-done
+sudo systemctl start one-thing-done
+
+# 查看状态
+sudo systemctl status one-thing-done
+```
+
+### 发送请求
 ```bash
 # 使用 Header 传递 API Key
 curl -H "X-API-Key: your-secret-api-key" http://localhost:9090/one-thing-done/restart_openclaw
