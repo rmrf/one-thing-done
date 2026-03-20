@@ -56,3 +56,7 @@ curl http://localhost:9090/one-thing-done/restart_openclaw?apikey=your-secret-ap
 - **Method**: `GET`
 - **Auth**: `X-API-Key` Header 或 `apikey` Query 参数
 - **Response**: 纯文本格式的命令输出
+
+## 许可证
+
+MIT License
