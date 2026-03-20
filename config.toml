@@ -1,0 +1,24 @@
+# One Thing Done 配置文件
+
+[server]
+host = "0.0.0.0"
+port = 9090
+
+[security]
+# API Key 用于验证请求，为空则不验证
+apikey = "your-secret-api-key"
+
+[[commands]]
+slug = "restart_openclaw"
+cmd = "systemctl"
+args = ["restart", "openclaw.service"]
+
+[[commands]]
+slug = "status_openclaw"
+cmd = "systemctl"
+args = ["status", "openclaw.service"]
+
+[[commands]]
+slug = "uptime"
+cmd = "uptime"
+args = []
