@@ -11,13 +11,15 @@ ExecStart=/usr/local/bin/one-thing-done --config /usr/local/etc/one-thing-done-c
 Restart=on-failure
 RestartSec=5
 
-# Security settings
-NoNewPrivileges=true
-ProtectSystem=strict
-ProtectHome=true
-ReadWritePaths=/tmp
+# 允许连接到 systemd D-Bus
+Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/systemd/private"
 
-# Logging
+# 基本安全设置（不影响 systemctl）
+NoNewPrivileges=false
+ProtectSystem=no
+ProtectHome=no
+
+# 日志
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=one-thing-done
