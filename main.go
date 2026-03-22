@@ -194,6 +194,8 @@ func handleCommand(w http.ResponseWriter, r *http.Request) {
 	log.Printf("执行命令: %s %v", cmd.Cmd, cmd.Args)
 
 	execCmd := exec.Command(cmd.Cmd, cmd.Args...)
+	// 设置环境变量，避免 TTY 相关问题
+	execCmd.Env = append(os.Environ(), "TERM=dumb")
 	output, err := execCmd.CombinedOutput()
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")

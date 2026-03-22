@@ -18,7 +18,7 @@ args = ["restart", "openclaw.service"]
 slug = "status_openclaw"
 desc = "查看 OpenClash 服务状态"
 cmd = "systemctl"
-args = ["status", "openclaw.service"]
+args = ["status", "--no-pager", "openclaw.service"]
 
 [[commands]]
 slug = "uptime"
