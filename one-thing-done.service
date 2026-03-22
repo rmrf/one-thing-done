@@ -11,13 +11,17 @@ ExecStart=/usr/local/bin/one-thing-done --config /usr/local/etc/one-thing-done-c
 Restart=on-failure
 RestartSec=5
 
-# 允许连接到 systemd D-Bus
-Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/systemd/private"
-
-# 基本安全设置（不影响 systemctl）
-NoNewPrivileges=false
+# 关键：允许访问 systemd D-Bus
+PrivateTmp=no
+PrivateDevices=no
+PrivateNetwork=no
 ProtectSystem=no
 ProtectHome=no
+NoNewPrivileges=no
+
+# 确保可以访问 D-Bus
+Environment="DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket"
+Environment="XDG_RUNTIME_DIR=/run/user/0"
 
 # 日志
 StandardOutput=journal
