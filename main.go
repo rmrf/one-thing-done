@@ -60,13 +60,15 @@ func main() {
 
 	// 创建命令映射
 	commandMap := make(map[string]Command)
+	baseURL := fmt.Sprintf("http://%s:%d/one-thing-done/", config.Server.Host, config.Server.Port)
 	log.Println("已加载的命令列表:")
 	for _, cmd := range config.Commands {
 		commandMap[cmd.Slug] = cmd
+		url := baseURL + cmd.Slug
 		if cmd.Desc != "" {
-			log.Printf("  - %s: %s", cmd.Slug, cmd.Desc)
+			log.Printf("  - %s: %s", cmd.Desc, url)
 		} else {
-			log.Printf("  - %s", cmd.Slug)
+			log.Printf("  - %s", url)
 		}
 	}
 
