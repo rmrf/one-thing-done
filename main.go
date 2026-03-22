@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/BurntSushi/toml"
 )
@@ -37,33 +40,96 @@ type Command struct {
 	Args []string `toml:"args"`
 }
 
-var config Config
+var (
+	config      Config
+	configMutex sync.RWMutex
+	configPath  string
+)
 
 func main() {
 	// 解析命令行参数
-	var configPath string
 	flag.StringVar(&configPath, "config", "config.toml", "Path to config file")
 	flag.Parse()
 
-	// 读取配置文件
-	if _, err := toml.DecodeFile(configPath, &config); err != nil {
+	// 初始加载配置
+	if err := loadConfig(); err != nil {
 		log.Fatalf("无法读取配置文件 %s: %v", configPath, err)
 	}
 
-	// 验证配置
-	if config.Server.Port == 0 {
-		config.Server.Port = 9090
-	}
-	if config.Server.Host == "" {
-		config.Server.Host = "0.0.0.0"
+	// 打印初始命令列表
+	printCommandList()
+
+	// 启动配置文件热加载监听
+	go watchConfig()
+
+	// 设置路由
+	http.HandleFunc("/one-thing-done/", handleCommand)
+
+	addr := fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port)
+	log.Printf("服务器启动在 http://%s", addr)
+	log.Fatal(http.ListenAndServe(addr, nil))
+}
+
+func loadConfig() error {
+	var newConfig Config
+	if _, err := toml.DecodeFile(configPath, &newConfig); err != nil {
+		return err
 	}
 
-	// 创建命令映射
-	commandMap := make(map[string]Command)
+	// 验证配置
+	if newConfig.Server.Port == 0 {
+		newConfig.Server.Port = 9090
+	}
+	if newConfig.Server.Host == "" {
+		newConfig.Server.Host = "0.0.0.0"
+	}
+
+	configMutex.Lock()
+	config = newConfig
+	configMutex.Unlock()
+
+	return nil
+}
+
+func watchConfig() {
+	var lastModTime time.Time
+
+	// 获取初始修改时间
+	if info, err := os.Stat(configPath); err == nil {
+		lastModTime = info.ModTime()
+	}
+
+	for {
+		time.Sleep(2 * time.Second)
+
+		info, err := os.Stat(configPath)
+		if err != nil {
+			log.Printf("无法读取配置文件: %v", err)
+			continue
+		}
+
+		if info.ModTime().After(lastModTime) {
+			lastModTime = info.ModTime()
+			log.Println("检测到配置文件变更，正在重新加载...")
+
+			if err := loadConfig(); err != nil {
+				log.Printf("重新加载配置文件失败: %v", err)
+				continue
+			}
+
+			printCommandList()
+			log.Println("配置文件已重新加载")
+		}
+	}
+}
+
+func printCommandList() {
+	configMutex.RLock()
+	defer configMutex.RUnlock()
+
 	baseURL := fmt.Sprintf("http://%s:%d/one-thing-done/", config.Server.Host, config.Server.Port)
 	log.Println("已加载的命令列表:")
 	for _, cmd := range config.Commands {
-		commandMap[cmd.Slug] = cmd
 		url := baseURL + cmd.Slug
 		if cmd.Desc != "" {
 			log.Printf("  - %s: %s", cmd.Desc, url)
@@ -71,31 +137,37 @@ func main() {
 			log.Printf("  - %s", url)
 		}
 	}
-
-	// 设置路由
-	http.HandleFunc("/one-thing-done/", func(w http.ResponseWriter, r *http.Request) {
-		handleCommand(w, r, commandMap)
-	})
-
-	addr := fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port)
-	log.Printf("服务器启动在 http://%s", addr)
-	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
-func handleCommand(w http.ResponseWriter, r *http.Request, commandMap map[string]Command) {
+func getCommandMap() map[string]Command {
+	configMutex.RLock()
+	defer configMutex.RUnlock()
+
+	commandMap := make(map[string]Command)
+	for _, cmd := range config.Commands {
+		commandMap[cmd.Slug] = cmd
+	}
+	return commandMap
+}
+
+func handleCommand(w http.ResponseWriter, r *http.Request) {
 	// 只接受 GET 请求
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	configMutex.RLock()
+	apiKey := config.Security.APIKey
+	configMutex.RUnlock()
+
 	// 验证 API Key
-	if config.Security.APIKey != "" {
-		apiKey := r.Header.Get("X-API-Key")
-		if apiKey == "" {
-			apiKey = r.URL.Query().Get("apikey")
+	if apiKey != "" {
+		requestApiKey := r.Header.Get("X-API-Key")
+		if requestApiKey == "" {
+			requestApiKey = r.URL.Query().Get("apikey")
 		}
-		if apiKey != config.Security.APIKey {
+		if requestApiKey != apiKey {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
@@ -111,6 +183,7 @@ func handleCommand(w http.ResponseWriter, r *http.Request, commandMap map[string
 	}
 
 	// 查找命令
+	commandMap := getCommandMap()
 	cmd, exists := commandMap[slug]
 	if !exists {
 		http.Error(w, fmt.Sprintf("Command '%s' not found", slug), http.StatusNotFound)
