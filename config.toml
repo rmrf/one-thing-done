@@ -12,13 +12,13 @@ apikey = "your-secret-api-key"
 slug = "restart_openclaw"
 desc = "重启 OpenClash 服务"
 cmd = "systemctl"
-args = ["restart", "openclaw.service"]
+args = ["restart", "openclash-gateway.service"]
 
 [[commands]]
 slug = "status_openclaw"
 desc = "查看 OpenClash 服务状态"
 cmd = "systemctl"
-args = ["status", "--no-pager", "openclaw.service"]
+args = ["status", "--no-pager", "openclash-gateway.service"]
 
 [[commands]]
 slug = "uptime"
