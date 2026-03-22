@@ -32,6 +32,7 @@ type SecurityConfig struct {
 // Command 命令配置
 type Command struct {
 	Slug string   `toml:"slug"`
+	Desc string   `toml:"desc"`
 	Cmd  string   `toml:"cmd"`
 	Args []string `toml:"args"`
 }
@@ -59,8 +60,14 @@ func main() {
 
 	// 创建命令映射
 	commandMap := make(map[string]Command)
+	log.Println("已加载的命令列表:")
 	for _, cmd := range config.Commands {
 		commandMap[cmd.Slug] = cmd
+		if cmd.Desc != "" {
+			log.Printf("  - %s: %s", cmd.Slug, cmd.Desc)
+		} else {
+			log.Printf("  - %s", cmd.Slug)
+		}
 	}
 
 	// 设置路由

@@ -10,15 +10,18 @@ apikey = "your-secret-api-key"
 
 [[commands]]
 slug = "restart_openclaw"
+desc = "重启 OpenClash 服务"
 cmd = "systemctl"
 args = ["restart", "openclaw.service"]
 
 [[commands]]
 slug = "status_openclaw"
+desc = "查看 OpenClash 服务状态"
 cmd = "systemctl"
 args = ["status", "openclaw.service"]
 
 [[commands]]
 slug = "uptime"
+desc = "查看系统运行时间"
 cmd = "uptime"
 args = []
